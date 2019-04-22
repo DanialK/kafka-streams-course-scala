@@ -13,6 +13,15 @@ lazy val dependencies = new {
 
   val slf4jLog4j = "org.slf4j" % "slf4j-log4j12" % "1.7.26"
 
+
+  val kafkaSerializationVersion  = "0.5.1"
+  val kafkaSerializationCore = "com.ovoenergy" %% "kafka-serialization-core" % kafkaSerializationVersion
+  val kafkaSerializationCirce = "com.ovoenergy" %% "kafka-serialization-circe" % kafkaSerializationVersion
+
+  val circeVersion = "0.11.1"
+  val circeCore =  "io.circe" %% "circe-core" % circeVersion
+  val circeGeneric =  "io.circe" %% "circe-generic" % circeVersion
+  val circeParser =  "io.circe" %% "circe-parser" % circeVersion
 }
 
 lazy val commonDependencies = Seq(
@@ -46,7 +55,8 @@ lazy val settings = Seq(
   resolvers ++= Seq(
     "Local Maven Repository" at "file://" + Path.userHome.absolutePath + "/.m2/repository",
     Resolver.sonatypeRepo("releases"),
-    Resolver.sonatypeRepo("snapshots")
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.bintrayRepo("ovotech", "maven")
   )
 )
 
@@ -56,7 +66,9 @@ lazy val global = project
   .aggregate(
     common,
     streamsStarterProject,
-    wordCount
+    wordCount,
+    favoriteColour,
+    bankBalanceExactlyOnce
   )
 
 lazy val common = project
@@ -93,6 +105,24 @@ lazy val favoriteColour = project
     settings,
     assemblySettings,
     libraryDependencies ++= commonDependencies
+  )
+  .dependsOn(
+    common
+  )
+
+
+lazy val bankBalanceExactlyOnce = project
+  .in(file("./bank-balance-exactly-once"))
+  .settings(
+    settings,
+    assemblySettings,
+    libraryDependencies ++= commonDependencies ++ Seq(
+      dependencies.circeCore,
+      dependencies.circeGeneric,
+      dependencies.circeParser,
+      dependencies.kafkaSerializationCore,
+      dependencies.kafkaSerializationCirce
+    )
   )
   .dependsOn(
     common
