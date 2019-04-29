@@ -5,12 +5,14 @@ import java.util.Properties
 import org.apache.kafka.streams.scala.ImplicitConversions._
 import org.apache.kafka.streams.scala._
 import org.apache.kafka.streams.scala.kstream._
-import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
+import org.apache.kafka.streams.{KafkaStreams, StreamsConfig, Topology}
 import org.apache.kafka.clients.consumer.ConsumerConfig
 
 
 object WordCountApp extends App {
+
   import Serdes._
+
   override def main(args: Array[String]): Unit = {
 
     val config: Properties = {
@@ -23,19 +25,7 @@ object WordCountApp extends App {
       p
     }
 
-    val builder: StreamsBuilder = new StreamsBuilder
-
-    val wordCountInput: KStream[String, String] = builder.stream[String, String]("WordCountInput")
-
-    val wordCounts: KTable[String, Long] = wordCountInput
-      .flatMapValues(textLine => textLine.toLowerCase.split("\\W+"))
-      .selectKey((_, word) => word)
-      .groupByKey
-      .count()
-
-    wordCounts.toStream.to("WordCountOutput")
-
-    val topology = builder.build()
+    val topology = createTopology()
     val streams: KafkaStreams = new KafkaStreams(topology, config)
     streams.start()
 
@@ -44,5 +34,21 @@ object WordCountApp extends App {
         streams.close()
       }
     }))
+  }
+
+  def createTopology(): Topology = {
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val wordCountInput: KStream[String, String] = builder.stream[String, String]("WordCountInput")
+
+    val wordCounts: KTable[String, Long] = wordCountInput
+      .flatMapValues(textLine => textLine.toLowerCase.split("\\W+"))
+      .selectKey((_, word) => word)
+      .groupByKey
+      .count()(Materialized.as("WordCountStore"))
+
+    wordCounts.toStream.to("WordCountOutput")
+
+    builder.build()
   }
 }

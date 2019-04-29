@@ -3,14 +3,15 @@ organization in ThisBuild := "com.solvemprobler"
 scalaVersion in ThisBuild := "2.12.8"
 
 lazy val dependencies = new {
+  val scalaTic = "org.scalactic" %% "scalactic" % "3.0.5"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5" % Test
+
   val kafka = "org.apache.kafka" %% "kafka" % "2.2.0"
-
-  val kafkaStreams = "org.apache.kafka" %% "kafka-streams-scala" % "2.2.0"
-
+  val kafkaStreams = "org.apache.kafka" % "kafka-streams" % "2.2.0"
   val kafkaStreamsScala = "org.apache.kafka" %% "kafka-streams-scala" % "2.2.0"
+  val kafkaSteamsTestUtils =  "org.apache.kafka" % "kafka-streams-test-utils" % "2.2.0" % Test
 
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.26"
-
   val slf4jLog4j = "org.slf4j" % "slf4j-log4j12" % "1.7.26"
 
 
@@ -25,9 +26,12 @@ lazy val dependencies = new {
 }
 
 lazy val commonDependencies = Seq(
+  dependencies.scalaTic,
+  dependencies.scalaTest,
   dependencies.kafka,
   dependencies.kafkaStreams,
   dependencies.kafkaStreamsScala,
+  dependencies.kafkaSteamsTestUtils,
   dependencies.slf4jApi,
   dependencies.slf4jLog4j
 )
@@ -68,7 +72,8 @@ lazy val global = project
     streamsStarterProject,
     wordCount,
     favoriteColour,
-    bankBalanceExactlyOnce
+    bankBalanceExactlyOnce,
+    userEventEnricher
   )
 
 lazy val common = project
@@ -123,6 +128,18 @@ lazy val bankBalanceExactlyOnce = project
       dependencies.kafkaSerializationCore,
       dependencies.kafkaSerializationCirce
     )
+  )
+  .dependsOn(
+    common
+  )
+
+
+lazy val userEventEnricher = project
+  .in(file("./user-event-enricher"))
+  .settings(
+    settings,
+    assemblySettings,
+    libraryDependencies ++= commonDependencies
   )
   .dependsOn(
     common
